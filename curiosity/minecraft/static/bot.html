@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minecraft Bot Controller</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0d1117;
+            --bg-secondary: #161b22;
+            --bg-tertiary: #21262d;
+            --bg-glass: rgba(22, 27, 34, 0.9);
+            --accent-green: #3fb950;
+            --accent-blue: #58a6ff;
+            --accent-orange: #f0883e;
+            --accent-red: #f85149;
+            --accent-purple: #a371f7;
+            --text-primary: #f0f6fc;
+            --text-secondary: #8b949e;
+            --text-muted: #6e7681;
+            --border-color: #30363d;
+            --shadow-glow: 0 0 30px rgba(63, 185, 80, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+
+        .bg-grid {
+            position: fixed;
+            inset: 0;
+            background-image: 
+                linear-gradient(rgba(63, 185, 80, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(63, 185, 80, 0.03) 1px, transparent 1px);
+            background-size: 32px 32px;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            min-height: 100vh;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 24px;
+            background: var(--bg-glass);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--accent-green), var(--accent-blue));
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .logo h1 {
+            font-size: 1.4rem;
+            font-weight: 600;
+        }
+
+        .status-bar {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--text-muted);
+        }
+
+        .status-dot.online {
+            background: var(--accent-green);
+            box-shadow: 0 0 8px var(--accent-green);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 360px;
+            gap: 24px;
+            flex: 1;
+        }
+
+        .left-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .card {
+            background: var(--bg-glass);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .card-icon {
+            width: 28px;
+            height: 28px;
+            background: var(--bg-tertiary);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+
+        .card-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+        }
+
+        .connection-form {
+            display: grid;
+            grid-template-columns: 2fr 1fr 2fr;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-input {
+            padding: 10px 14px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            transition: border-color 0.2s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 20px;
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 500;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-green), #2ea043);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(63, 185, 80, 0.3);
+        }
+
+        .btn-danger {
+            background: var(--accent-red);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #da3633;
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background: var(--border-color);
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 12px;
+        }
+
+        .world-view {
+            flex: 1;
+            min-height: 400px;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .world-canvas-container {
+            flex: 1;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #world-canvas {
+            width: 100%;
+            height: 100%;
+            background: #000;
+        }
+
+        .world-overlay {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.8);
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .world-overlay.hidden {
+            display: none;
+        }
+
+        .compass {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            width: 80px;
+            height: 80px;
+            background: var(--bg-glass);
+            border: 1px solid var(--border-color);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .compass-needle {
+            width: 4px;
+            height: 32px;
+            background: linear-gradient(to bottom, var(--accent-red) 50%, white 50%);
+            border-radius: 2px;
+            transform-origin: center center;
+            transition: transform 0.2s ease-out;
+        }
+
+        .position-display {
+            position: absolute;
+            bottom: 16px;
+            left: 16px;
+            padding: 8px 12px;
+            background: var(--bg-glass);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+        }
+
+        .controls-section {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+
+        .control-key {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.15s;
+            user-select: none;
+        }
+
+        .control-key:hover {
+            background: var(--border-color);
+        }
+
+        .control-key.active {
+            background: var(--accent-green);
+            border-color: var(--accent-green);
+            color: var(--bg-primary);
+        }
+
+        .control-key .key-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .control-key .key-action {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .control-key.active .key-action {
+            color: var(--bg-tertiary);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .stat-card {
+            padding: 16px;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--accent-blue);
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+            text-transform: uppercase;
+        }
+
+        .health-bar {
+            margin-bottom: 12px;
+        }
+
+        .health-bar-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            margin-bottom: 6px;
+        }
+
+        .health-bar-track {
+            height: 12px;
+            background: var(--bg-tertiary);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .health-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-red), var(--accent-orange));
+            border-radius: 6px;
+            transition: width 0.3s ease;
+        }
+
+        .food-bar .health-bar-fill {
+            background: linear-gradient(90deg, var(--accent-orange), #c69026);
+        }
+
+        .entity-list {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .entity-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 12px;
+            background: var(--bg-tertiary);
+            border-radius: 6px;
+            margin-bottom: 6px;
+            font-size: 0.85rem;
+        }
+
+        .entity-type {
+            color: var(--accent-purple);
+        }
+
+        .entity-distance {
+            color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .chat-section {
+            display: flex;
+            gap: 8px;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 10px 14px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+        }
+
+        .chat-input:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+        }
+
+        .log-container {
+            max-height: 200px;
+            overflow-y: auto;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            padding: 12px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+        }
+
+        .log-entry {
+            padding: 4px 0;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .log-entry:last-child {
+            border-bottom: none;
+        }
+
+        .log-entry.info { color: var(--accent-blue); }
+        .log-entry.success { color: var(--accent-green); }
+        .log-entry.error { color: var(--accent-red); }
+        .log-entry.event { color: var(--accent-purple); }
+
+        @media (max-width: 1100px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .connection-form {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-grid"></div>
+
+    <div class="container">
+        <header>
+            <div class="logo">
+                <div class="logo-icon">🤖</div>
+                <h1>Minecraft Bot</h1>
+            </div>
+            <div class="status-bar">
+                <div class="status-badge">
+                    <div class="status-dot" id="ws-status"></div>
+                    <span id="ws-status-text">WebSocket</span>
+                </div>
+                <div class="status-badge">
+                    <div class="status-dot" id="bot-status"></div>
+                    <span id="bot-status-text">Bot Offline</span>
+                </div>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <div class="left-panel">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon">🔌</div>
+                        <span class="card-title">Server Connection</span>
+                    </div>
+                    <div class="connection-form">
+                        <div class="form-group">
+                            <label class="form-label">Host</label>
+                            <input type="text" class="form-input" id="mc-host" value="localhost">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Port</label>
+                            <input type="number" class="form-input" id="mc-port" value="25565">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Username</label>
+                            <input type="text" class="form-input" id="mc-username" value="PythonBot">
+                        </div>
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn btn-primary" id="btn-connect" onclick="connectBot()">
+                            Connect Bot
+                        </button>
+                        <button class="btn btn-danger" id="btn-disconnect" onclick="disconnectBot()">
+                            Disconnect
+                        </button>
+                    </div>
+                </div>
+
+                <div class="card" style="flex: 1;">
+                    <div class="card-header">
+                        <div class="card-icon">🌍</div>
+                        <span class="card-title">World View</span>
+                    </div>
+                    <div class="world-view">
+                        <div class="world-canvas-container">
+                            <canvas id="world-canvas"></canvas>
+                            <div class="world-overlay" id="world-overlay">
+                                <span>Connect to a Minecraft server to view the world</span>
+                            </div>
+                            <div class="compass">
+                                <div class="compass-needle" id="compass-needle"></div>
+                            </div>
+                            <div class="position-display">
+                                <span id="pos-display">X: 0 Y: 0 Z: 0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon">⌨️</div>
+                        <span class="card-title">Controls</span>
+                    </div>
+                    <div class="controls-section">
+                        <div class="control-key" id="key-q" data-action="drop">
+                            <span class="key-label">Q</span>
+                            <span class="key-action">Drop</span>
+                        </div>
+                        <div class="control-key" id="key-w" data-action="forward">
+                            <span class="key-label">W</span>
+                            <span class="key-action">Forward</span>
+                        </div>
+                        <div class="control-key" id="key-e" data-action="inventory">
+                            <span class="key-label">E</span>
+                            <span class="key-action">Inventory</span>
+                        </div>
+                        <div class="control-key" id="key-a" data-action="left">
+                            <span class="key-label">A</span>
+                            <span class="key-action">Left</span>
+                        </div>
+                        <div class="control-key" id="key-s" data-action="backward">
+                            <span class="key-label">S</span>
+                            <span class="key-action">Backward</span>
+                        </div>
+                        <div class="control-key" id="key-d" data-action="right">
+                            <span class="key-label">D</span>
+                            <span class="key-action">Right</span>
+                        </div>
+                        <div class="control-key" id="key-shift" data-action="sneak">
+                            <span class="key-label">⇧</span>
+                            <span class="key-action">Sneak</span>
+                        </div>
+                        <div class="control-key" id="key-space" data-action="jump">
+                            <span class="key-label">␣</span>
+                            <span class="key-action">Jump</span>
+                        </div>
+                        <div class="control-key" id="key-ctrl" data-action="sprint">
+                            <span class="key-label">⌃</span>
+                            <span class="key-action">Sprint</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="right-panel">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon">❤️</div>
+                        <span class="card-title">Player Status</span>
+                    </div>
+                    <div class="health-bar">
+                        <div class="health-bar-label">
+                            <span>Health</span>
+                            <span id="health-value">20/20</span>
+                        </div>
+                        <div class="health-bar-track">
+                            <div class="health-bar-fill" id="health-fill" style="width: 100%"></div>
+                        </div>
+                    </div>
+                    <div class="health-bar food-bar">
+                        <div class="health-bar-label">
+                            <span>Food</span>
+                            <span id="food-value">20/20</span>
+                        </div>
+                        <div class="health-bar-track">
+                            <div class="health-bar-fill" id="food-fill" style="width: 100%"></div>
+                        </div>
+                    </div>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-value" id="stat-chunks">0</div>
+                            <div class="stat-label">Chunks</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="stat-entities">0</div>
+                            <div class="stat-label">Entities</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="stat-time">0</div>
+                            <div class="stat-label">Time</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="stat-gamemode">?</div>
+                            <div class="stat-label">Gamemode</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon">💬</div>
+                        <span class="card-title">Chat</span>
+                    </div>
+                    <div class="chat-section">
+                        <input type="text" class="chat-input" id="chat-input" placeholder="Type a message...">
+                        <button class="btn btn-secondary" onclick="sendChat()">Send</button>
+                    </div>
+                </div>
+
+                <div class="card" style="flex: 1;">
+                    <div class="card-header">
+                        <div class="card-icon">📋</div>
+                        <span class="card-title">Event Log</span>
+                    </div>
+                    <div class="log-container" id="log-container">
+                        <div class="log-entry info">Ready to connect...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const WS_URL = `ws://${window.location.host}/ws`;
+        let ws = null;
+        let botState = null;
+        let pressedKeys = new Set();
+        let canvas, ctx;
+
+        function init() {
+            canvas = document.getElementById('world-canvas');
+            ctx = canvas.getContext('2d');
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+
+            document.addEventListener('keydown', handleKeyDown);
+            document.addEventListener('keyup', handleKeyUp);
+            
+            document.getElementById('chat-input').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') sendChat();
+            });
+
+            connectWebSocket();
+        }
+
+        function resizeCanvas() {
+            const container = canvas.parentElement;
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+            renderWorld();
+        }
+
+        function connectWebSocket() {
+            ws = new WebSocket(WS_URL);
+            
+            ws.onopen = () => {
+                updateWsStatus(true);
+                addLog('WebSocket connected', 'success');
+            };
+            
+            ws.onclose = () => {
+                updateWsStatus(false);
+                addLog('WebSocket disconnected', 'error');
+                setTimeout(connectWebSocket, 3000);
+            };
+            
+            ws.onerror = () => {
+                updateWsStatus(false);
+            };
+            
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                
+                if (data.type === 'state') {
+                    botState = data.data;
+                    updateUI();
+                } else if (data.type === 'event') {
+                    handleEvent(data);
+                } else if (data.type === 'ack') {
+                    if (!data.success) {
+                        addLog(`Action failed: ${data.action}`, 'error');
+                    }
+                } else if (data.type === 'error') {
+                    addLog(`Error: ${data.error}`, 'error');
+                }
+            };
+        }
+
+        function updateWsStatus(connected) {
+            const dot = document.getElementById('ws-status');
+            const text = document.getElementById('ws-status-text');
+            dot.classList.toggle('online', connected);
+            text.textContent = connected ? 'Connected' : 'Disconnected';
+        }
+
+        function updateBotStatus(connected) {
+            const dot = document.getElementById('bot-status');
+            const text = document.getElementById('bot-status-text');
+            dot.classList.toggle('online', connected);
+            text.textContent = connected ? 'Bot Online' : 'Bot Offline';
+            document.getElementById('world-overlay').classList.toggle('hidden', connected);
+        }
+
+        function updateUI() {
+            if (!botState) return;
+
+            updateBotStatus(botState.connected);
+
+            const pos = botState.player?.position;
+            if (pos) {
+                document.getElementById('pos-display').textContent = 
+                    `X: ${pos.x.toFixed(1)} Y: ${pos.y.toFixed(1)} Z: ${pos.z.toFixed(1)}`;
+                
+                const yaw = pos.yaw || 0;
+                document.getElementById('compass-needle').style.transform = `rotate(${yaw}deg)`;
+            }
+
+            const health = botState.player?.health || 0;
+            const food = botState.player?.food || 0;
+            
+            document.getElementById('health-value').textContent = `${health.toFixed(0)}/20`;
+            document.getElementById('health-fill').style.width = `${(health / 20) * 100}%`;
+            
+            document.getElementById('food-value').textContent = `${food}/20`;
+            document.getElementById('food-fill').style.width = `${(food / 20) * 100}%`;
+
+            document.getElementById('stat-chunks').textContent = botState.world?.loaded_chunks_count || 0;
+            document.getElementById('stat-entities').textContent = botState.world?.entities_count || 0;
+            
+            const timeOfDay = botState.world?.time_of_day || 0;
+            const hours = Math.floor((timeOfDay / 1000 + 6) % 24);
+            const mins = Math.floor((timeOfDay % 1000) / 1000 * 60);
+            document.getElementById('stat-time').textContent = `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+            
+            const gamemodes = ['Survival', 'Creative', 'Adventure', 'Spectator'];
+            document.getElementById('stat-gamemode').textContent = gamemodes[botState.player?.gamemode] || '?';
+
+            botState.movement_keys?.forEach(key => {
+                const el = document.getElementById(`key-${key}`);
+                if (el) el.classList.add('active');
+            });
+            ['w', 'a', 's', 'd', 'shift', 'ctrl', 'space'].forEach(key => {
+                if (!botState.movement_keys?.includes(key)) {
+                    const el = document.getElementById(`key-${key}`);
+                    if (el) el.classList.remove('active');
+                }
+            });
+
+            if (botState.is_sneaking) document.getElementById('key-shift').classList.add('active');
+            if (botState.is_sprinting) document.getElementById('key-ctrl').classList.add('active');
+
+            renderWorld();
+        }
+
+        function renderWorld() {
+            if (!ctx) return;
+
+            ctx.fillStyle = '#1a1a2e';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            if (!botState || !botState.connected) return;
+
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+
+            ctx.save();
+            ctx.translate(centerX, centerY);
+            
+            const yaw = botState.player?.position?.yaw || 0;
+            ctx.rotate(-yaw * Math.PI / 180);
+
+            ctx.strokeStyle = 'rgba(63, 185, 80, 0.3)';
+            ctx.lineWidth = 1;
+            const gridSize = 20;
+            const gridRange = 10;
+            
+            for (let x = -gridRange; x <= gridRange; x++) {
+                ctx.beginPath();
+                ctx.moveTo(x * gridSize, -gridRange * gridSize);
+                ctx.lineTo(x * gridSize, gridRange * gridSize);
+                ctx.stroke();
+            }
+            for (let y = -gridRange; y <= gridRange; y++) {
+                ctx.beginPath();
+                ctx.moveTo(-gridRange * gridSize, y * gridSize);
+                ctx.lineTo(gridRange * gridSize, y * gridSize);
+                ctx.stroke();
+            }
+
+            ctx.fillStyle = '#3fb950';
+            ctx.beginPath();
+            ctx.moveTo(0, -15);
+            ctx.lineTo(-8, 10);
+            ctx.lineTo(8, 10);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.restore();
+
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.font = '12px JetBrains Mono';
+            ctx.textAlign = 'center';
+            ctx.fillText('Top-down view (you are the triangle)', centerX, canvas.height - 20);
+        }
+
+        function handleEvent(data) {
+            const event = data.event;
+            if (event === 'join') {
+                addLog(`Joined game as ${data.player}`, 'success');
+            } else if (event === 'spawn') {
+                const pos = data.position;
+                addLog(`Spawned at ${pos.x.toFixed(1)}, ${pos.y.toFixed(1)}, ${pos.z.toFixed(1)}`, 'event');
+            } else if (event === 'health') {
+                addLog(`Health: ${data.health.toFixed(1)}, Food: ${data.food}`, 'info');
+            } else if (event === 'death') {
+                addLog('Player died!', 'error');
+            } else if (event === 'disconnect') {
+                addLog('Disconnected from server', 'error');
+            }
+        }
+
+        function handleKeyDown(e) {
+            if (document.activeElement.tagName === 'INPUT') return;
+            
+            const keyActions = {
+                'w': 'move_forward',
+                'a': 'move_left',
+                's': 'move_backward',
+                'd': 'move_right',
+                ' ': 'jump',
+                'Shift': 'sneak',
+                'Control': 'sprint',
+            };
+
+            const action = keyActions[e.key];
+            if (action && !pressedKeys.has(e.key)) {
+                pressedKeys.add(e.key);
+                e.preventDefault();
+                
+                if (action === 'jump') {
+                    sendInput({ action: 'jump' });
+                } else {
+                    sendInput({ action, start: true });
+                }
+                
+                const keyMap = { 'w': 'w', 'a': 'a', 's': 's', 'd': 'd', ' ': 'space', 'Shift': 'shift', 'Control': 'ctrl' };
+                const el = document.getElementById(`key-${keyMap[e.key]}`);
+                if (el) el.classList.add('active');
+            }
+        }
+
+        function handleKeyUp(e) {
+            const keyActions = {
+                'w': 'move_forward',
+                'a': 'move_left',
+                's': 'move_backward',
+                'd': 'move_right',
+                'Shift': 'sneak',
+                'Control': 'sprint',
+            };
+
+            const action = keyActions[e.key];
+            if (action && pressedKeys.has(e.key)) {
+                pressedKeys.delete(e.key);
+                e.preventDefault();
+                
+                if (action !== 'jump') {
+                    sendInput({ action, start: false });
+                }
+                
+                const keyMap = { 'w': 'w', 'a': 'a', 's': 's', 'd': 'd', ' ': 'space', 'Shift': 'shift', 'Control': 'ctrl' };
+                const el = document.getElementById(`key-${keyMap[e.key]}`);
+                if (el) el.classList.remove('active');
+            }
+        }
+
+        function sendInput(data) {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify(data));
+            }
+        }
+
+        function connectBot() {
+            const host = document.getElementById('mc-host').value;
+            const port = parseInt(document.getElementById('mc-port').value);
+            const username = document.getElementById('mc-username').value;
+            
+            addLog(`Connecting to ${host}:${port} as ${username}...`, 'info');
+            sendInput({ action: 'connect', host, port, username });
+        }
+
+        function disconnectBot() {
+            addLog('Disconnecting...', 'info');
+            sendInput({ action: 'disconnect' });
+        }
+
+        function sendChat() {
+            const input = document.getElementById('chat-input');
+            const message = input.value.trim();
+            if (message) {
+                sendInput({ action: 'chat', message });
+                addLog(`Chat: ${message}`, 'info');
+                input.value = '';
+            }
+        }
+
+        function addLog(message, type = 'info') {
+            const container = document.getElementById('log-container');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            container.appendChild(entry);
+            container.scrollTop = container.scrollHeight;
+            
+            while (container.children.length > 100) {
+                container.removeChild(container.firstChild);
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>
+
