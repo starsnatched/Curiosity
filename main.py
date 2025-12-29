@@ -54,7 +54,7 @@ Examples:
     else:
         parser.print_help()
         print("\nQuick start:")
-        print("  1. Start a Minecraft server: java -Xmx1024M -Xms1024M -jar server.jar nogui")
+        print("  1. Start a Minecraft server: cd minecraft_server && java -Xmx1024M -Xms1024M -jar server.jar nogui")
         print("  2. Run the bot server: python main.py server")
         print("  3. Open http://localhost:8766 in your browser")
 

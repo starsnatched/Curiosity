@@ -3,26 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Minecraft Bot Controller</title>
+    <title>Minecraft Bot - 3D View</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Berkeley+Mono:wght@400;500;600&family=Satoshi:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-primary: #0d1117;
-            --bg-secondary: #161b22;
-            --bg-tertiary: #21262d;
-            --bg-glass: rgba(22, 27, 34, 0.9);
-            --accent-green: #3fb950;
-            --accent-blue: #58a6ff;
-            --accent-orange: #f0883e;
-            --accent-red: #f85149;
-            --accent-purple: #a371f7;
-            --text-primary: #f0f6fc;
-            --text-secondary: #8b949e;
-            --text-muted: #6e7681;
-            --border-color: #30363d;
-            --shadow-glow: 0 0 30px rgba(63, 185, 80, 0.1);
+            --bg-void: #050508;
+            --bg-deep: #0a0a10;
+            --bg-panel: rgba(12, 12, 20, 0.95);
+            --bg-card: rgba(18, 18, 28, 0.9);
+            --bg-input: rgba(25, 25, 38, 0.8);
+            --accent-emerald: #10b981;
+            --accent-cyan: #06b6d4;
+            --accent-violet: #8b5cf6;
+            --accent-rose: #f43f5e;
+            --accent-amber: #f59e0b;
+            --text-bright: #f8fafc;
+            --text-mid: #94a3b8;
+            --text-dim: #475569;
+            --border-subtle: rgba(148, 163, 184, 0.1);
+            --border-glow: rgba(16, 185, 129, 0.3);
+            --glow-emerald: 0 0 40px rgba(16, 185, 129, 0.2);
         }
 
         * {
@@ -31,82 +33,76 @@
             box-sizing: border-box;
         }
 
+        @font-face {
+            font-family: 'Berkeley Mono';
+            src: local('Berkeley Mono'), local('SF Mono'), local('Monaco');
+        }
+
         body {
-            font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: var(--bg-primary);
-            color: var(--text-primary);
+            font-family: 'Satoshi', system-ui, sans-serif;
+            background: var(--bg-void);
+            color: var(--text-bright);
             min-height: 100vh;
+            overflow: hidden;
         }
 
-        .bg-grid {
-            position: fixed;
-            inset: 0;
-            background-image: 
-                linear-gradient(rgba(63, 185, 80, 0.03) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(63, 185, 80, 0.03) 1px, transparent 1px);
-            background-size: 32px 32px;
-            pointer-events: none;
-            z-index: -1;
-        }
-
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 24px;
-            display: flex;
-            flex-direction: column;
-            gap: 24px;
-            min-height: 100vh;
+        .app-container {
+            display: grid;
+            grid-template-columns: 1fr 340px;
+            grid-template-rows: 60px 1fr;
+            height: 100vh;
+            gap: 1px;
+            background: var(--border-subtle);
         }
 
         header {
+            grid-column: 1 / -1;
+            background: var(--bg-panel);
             display: flex;
+            align-items: center;
             justify-content: space-between;
-            align-items: center;
-            padding: 16px 24px;
-            background: var(--bg-glass);
-            backdrop-filter: blur(16px);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
+            padding: 0 24px;
+            border-bottom: 1px solid var(--border-subtle);
         }
 
-        .logo {
+        .brand {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 14px;
         }
 
-        .logo-icon {
-            width: 40px;
-            height: 40px;
-            background: linear-gradient(135deg, var(--accent-green), var(--accent-blue));
-            border-radius: 8px;
+        .brand-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--accent-emerald), var(--accent-cyan));
+            border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 20px;
+            font-size: 18px;
+            box-shadow: var(--glow-emerald);
         }
 
-        .logo h1 {
-            font-size: 1.4rem;
+        .brand h1 {
+            font-size: 1.15rem;
             font-weight: 600;
+            letter-spacing: -0.02em;
         }
 
-        .status-bar {
+        .status-group {
             display: flex;
-            align-items: center;
-            gap: 16px;
+            gap: 12px;
         }
 
-        .status-badge {
+        .status-pill {
             display: flex;
             align-items: center;
-            gap: 6px;
-            padding: 6px 14px;
-            background: var(--bg-tertiary);
-            border: 1px solid var(--border-color);
-            border-radius: 16px;
-            font-size: 0.85rem;
+            gap: 8px;
+            padding: 8px 16px;
+            background: var(--bg-input);
+            border: 1px solid var(--border-subtle);
+            border-radius: 20px;
+            font-size: 0.82rem;
             font-weight: 500;
         }
 
@@ -114,229 +110,368 @@
             width: 8px;
             height: 8px;
             border-radius: 50%;
-            background: var(--text-muted);
+            background: var(--text-dim);
+            transition: all 0.3s;
         }
 
-        .status-dot.online {
-            background: var(--accent-green);
-            box-shadow: 0 0 8px var(--accent-green);
-            animation: pulse 2s infinite;
+        .status-dot.live {
+            background: var(--accent-emerald);
+            box-shadow: 0 0 12px var(--accent-emerald);
+            animation: pulse-glow 2s infinite;
         }
 
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.6; }
+        @keyframes pulse-glow {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(0.9); }
         }
 
-        .main-content {
-            display: grid;
-            grid-template-columns: 1fr 360px;
-            gap: 24px;
-            flex: 1;
-        }
-
-        .left-panel {
-            display: flex;
-            flex-direction: column;
-            gap: 24px;
-        }
-
-        .card {
-            background: var(--bg-glass);
-            backdrop-filter: blur(16px);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 20px;
-        }
-
-        .card-header {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 16px;
-            padding-bottom: 12px;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .card-icon {
-            width: 28px;
-            height: 28px;
-            background: var(--bg-tertiary);
-            border-radius: 6px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 14px;
-        }
-
-        .card-title {
-            font-size: 0.95rem;
-            font-weight: 600;
-        }
-
-        .connection-form {
-            display: grid;
-            grid-template-columns: 2fr 1fr 2fr;
-            gap: 12px;
-            margin-bottom: 16px;
-        }
-
-        .form-group {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-
-        .form-label {
-            font-size: 0.75rem;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .form-input {
-            padding: 10px 14px;
-            background: var(--bg-tertiary);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            color: var(--text-primary);
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.9rem;
-            transition: border-color 0.2s;
-        }
-
-        .form-input:focus {
-            outline: none;
-            border-color: var(--accent-blue);
-        }
-
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            padding: 12px 20px;
-            font-family: 'Outfit', sans-serif;
-            font-size: 0.9rem;
-            font-weight: 500;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, var(--accent-green), #2ea043);
-            color: white;
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(63, 185, 80, 0.3);
-        }
-
-        .btn-danger {
-            background: var(--accent-red);
-            color: white;
-        }
-
-        .btn-danger:hover {
-            background: #da3633;
-        }
-
-        .btn-secondary {
-            background: var(--bg-tertiary);
-            color: var(--text-primary);
-            border: 1px solid var(--border-color);
-        }
-
-        .btn-secondary:hover {
-            background: var(--border-color);
-        }
-
-        .btn-group {
-            display: flex;
-            gap: 12px;
-        }
-
-        .world-view {
-            flex: 1;
-            min-height: 400px;
-            background: var(--bg-secondary);
-            border-radius: 8px;
-            display: flex;
-            flex-direction: column;
+        .main-view {
+            background: var(--bg-deep);
+            position: relative;
             overflow: hidden;
         }
 
-        .world-canvas-container {
-            flex: 1;
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        #world-canvas {
+        #render-canvas {
             width: 100%;
             height: 100%;
-            background: #000;
+            display: block;
         }
 
-        .world-overlay {
+        .render-overlay {
             position: absolute;
             inset: 0;
             display: flex;
             align-items: center;
             justify-content: center;
-            background: rgba(0, 0, 0, 0.8);
-            color: var(--text-secondary);
-            font-size: 0.9rem;
+            background: rgba(5, 5, 8, 0.9);
+            backdrop-filter: blur(8px);
+            transition: opacity 0.3s, visibility 0.3s;
         }
 
-        .world-overlay.hidden {
-            display: none;
+        .render-overlay.hidden {
+            opacity: 0;
+            visibility: hidden;
         }
 
-        .compass {
+        .overlay-content {
+            text-align: center;
+        }
+
+        .overlay-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.6;
+        }
+
+        .overlay-text {
+            font-size: 0.95rem;
+            color: var(--text-mid);
+        }
+
+        .hud-layer {
             position: absolute;
-            top: 16px;
-            right: 16px;
-            width: 80px;
-            height: 80px;
-            background: var(--bg-glass);
-            border: 1px solid var(--border-color);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            inset: 0;
+            pointer-events: none;
         }
 
-        .compass-needle {
-            width: 4px;
-            height: 32px;
-            background: linear-gradient(to bottom, var(--accent-red) 50%, white 50%);
-            border-radius: 2px;
-            transform-origin: center center;
-            transition: transform 0.2s ease-out;
-        }
-
-        .position-display {
+        .hud-compass {
             position: absolute;
-            bottom: 16px;
-            left: 16px;
-            padding: 8px 12px;
-            background: var(--bg-glass);
-            border: 1px solid var(--border-color);
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 200px;
+            height: 40px;
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
             border-radius: 8px;
-            font-family: 'JetBrains Mono', monospace;
+            overflow: hidden;
+        }
+
+        .compass-strip {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            white-space: nowrap;
+            font-family: 'Berkeley Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--text-mid);
+            transition: left 0.1s linear;
+        }
+
+        .compass-marker {
+            display: inline-block;
+            width: 50px;
+            text-align: center;
+        }
+
+        .compass-marker.cardinal {
+            color: var(--accent-emerald);
+            font-weight: 600;
+        }
+
+        .compass-center {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 2px;
+            height: 100%;
+            background: var(--accent-emerald);
+            box-shadow: 0 0 8px var(--accent-emerald);
+        }
+
+        .hud-coords {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            padding: 12px 16px;
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 10px;
+            font-family: 'Berkeley Mono', monospace;
             font-size: 0.85rem;
         }
 
-        .controls-section {
+        .coord-row {
+            display: flex;
+            gap: 20px;
+        }
+
+        .coord-label {
+            color: var(--text-dim);
+            width: 16px;
+        }
+
+        .coord-value {
+            color: var(--accent-cyan);
+            min-width: 60px;
+        }
+
+        .hud-crosshair {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 24px;
+            height: 24px;
+        }
+
+        .crosshair-h, .crosshair-v {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.8);
+        }
+
+        .crosshair-h {
+            width: 100%;
+            height: 2px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .crosshair-v {
+            width: 2px;
+            height: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .hud-fps {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            padding: 8px 12px;
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            font-family: 'Berkeley Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--accent-emerald);
+        }
+
+        .sidebar {
+            background: var(--bg-panel);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .panel {
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .panel-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 16px;
+            background: rgba(0, 0, 0, 0.2);
+            border-bottom: 1px solid var(--border-subtle);
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-mid);
+        }
+
+        .panel-icon {
+            opacity: 0.7;
+        }
+
+        .panel-body {
+            padding: 16px;
+        }
+
+        .connection-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .input-group.full {
+            grid-column: 1 / -1;
+        }
+
+        .input-label {
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .input-field {
+            padding: 10px 12px;
+            background: var(--bg-input);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            color: var(--text-bright);
+            font-family: 'Berkeley Mono', monospace;
+            font-size: 0.85rem;
+            transition: border-color 0.2s;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: var(--accent-emerald);
+        }
+
+        .btn-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 11px 16px;
+            border: none;
+            border-radius: 8px;
+            font-family: 'Satoshi', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-emerald), #059669);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-danger {
+            background: var(--accent-rose);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #e11d48;
+        }
+
+        .vitals-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .vital-card {
+            padding: 14px;
+            background: var(--bg-input);
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .vital-value {
+            font-family: 'Berkeley Mono', monospace;
+            font-size: 1.6rem;
+            font-weight: 600;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-violet));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .vital-label {
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            margin-top: 4px;
+        }
+
+        .bar-group {
+            margin-bottom: 14px;
+        }
+
+        .bar-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.78rem;
+            margin-bottom: 6px;
+        }
+
+        .bar-label {
+            color: var(--text-mid);
+        }
+
+        .bar-value {
+            font-family: 'Berkeley Mono', monospace;
+            color: var(--text-bright);
+        }
+
+        .bar-track {
+            height: 8px;
+            background: var(--bg-input);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        .bar-fill.health {
+            background: linear-gradient(90deg, var(--accent-rose), #fb7185);
+        }
+
+        .bar-fill.food {
+            background: linear-gradient(90deg, var(--accent-amber), #fbbf24);
+        }
+
+        .controls-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 12px;
+            gap: 8px;
         }
 
         .control-key {
@@ -344,9 +479,9 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 16px;
-            background: var(--bg-tertiary);
-            border: 1px solid var(--border-color);
+            padding: 14px 8px;
+            background: var(--bg-input);
+            border: 1px solid var(--border-subtle);
             border-radius: 8px;
             cursor: pointer;
             transition: all 0.15s;
@@ -354,352 +489,305 @@
         }
 
         .control-key:hover {
-            background: var(--border-color);
+            background: rgba(148, 163, 184, 0.1);
         }
 
         .control-key.active {
-            background: var(--accent-green);
-            border-color: var(--accent-green);
-            color: var(--bg-primary);
+            background: var(--accent-emerald);
+            border-color: var(--accent-emerald);
+            box-shadow: 0 0 16px rgba(16, 185, 129, 0.4);
         }
 
-        .control-key .key-label {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 1.2rem;
+        .control-key.active .key-char {
+            color: var(--bg-void);
+        }
+
+        .control-key.active .key-label {
+            color: rgba(0, 0, 0, 0.6);
+        }
+
+        .key-char {
+            font-family: 'Berkeley Mono', monospace;
+            font-size: 1.1rem;
             font-weight: 600;
+            color: var(--text-bright);
         }
 
-        .control-key .key-action {
-            font-size: 0.7rem;
-            color: var(--text-muted);
-            margin-top: 4px;
+        .key-label {
+            font-size: 0.65rem;
+            color: var(--text-dim);
+            margin-top: 3px;
         }
 
-        .control-key.active .key-action {
-            color: var(--bg-tertiary);
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 12px;
-        }
-
-        .stat-card {
-            padding: 16px;
-            background: var(--bg-tertiary);
-            border-radius: 8px;
-            text-align: center;
-        }
-
-        .stat-value {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 1.5rem;
-            font-weight: 600;
-            color: var(--accent-blue);
-        }
-
-        .stat-label {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            margin-top: 4px;
-            text-transform: uppercase;
-        }
-
-        .health-bar {
-            margin-bottom: 12px;
-        }
-
-        .health-bar-label {
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.8rem;
-            margin-bottom: 6px;
-        }
-
-        .health-bar-track {
-            height: 12px;
-            background: var(--bg-tertiary);
-            border-radius: 6px;
-            overflow: hidden;
-        }
-
-        .health-bar-fill {
-            height: 100%;
-            background: linear-gradient(90deg, var(--accent-red), var(--accent-orange));
-            border-radius: 6px;
-            transition: width 0.3s ease;
-        }
-
-        .food-bar .health-bar-fill {
-            background: linear-gradient(90deg, var(--accent-orange), #c69026);
-        }
-
-        .entity-list {
-            max-height: 200px;
-            overflow-y: auto;
-        }
-
-        .entity-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 12px;
-            background: var(--bg-tertiary);
-            border-radius: 6px;
-            margin-bottom: 6px;
-            font-size: 0.85rem;
-        }
-
-        .entity-type {
-            color: var(--accent-purple);
-        }
-
-        .entity-distance {
-            color: var(--text-muted);
-            font-family: 'JetBrains Mono', monospace;
-        }
-
-        .chat-section {
-            display: flex;
-            gap: 8px;
-        }
-
-        .chat-input {
+        .log-panel {
             flex: 1;
-            padding: 10px 14px;
-            background: var(--bg-tertiary);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            color: var(--text-primary);
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.9rem;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
         }
 
-        .chat-input:focus {
-            outline: none;
-            border-color: var(--accent-blue);
-        }
-
-        .log-container {
-            max-height: 200px;
+        .log-scroll {
+            flex: 1;
             overflow-y: auto;
-            background: var(--bg-secondary);
-            border-radius: 8px;
             padding: 12px;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.8rem;
+            font-family: 'Berkeley Mono', monospace;
+            font-size: 0.75rem;
+            line-height: 1.6;
         }
 
         .log-entry {
             padding: 4px 0;
-            color: var(--text-secondary);
-            border-bottom: 1px solid var(--border-color);
+            color: var(--text-dim);
+            border-bottom: 1px solid rgba(148, 163, 184, 0.05);
         }
 
         .log-entry:last-child {
             border-bottom: none;
         }
 
-        .log-entry.info { color: var(--accent-blue); }
-        .log-entry.success { color: var(--accent-green); }
-        .log-entry.error { color: var(--accent-red); }
-        .log-entry.event { color: var(--accent-purple); }
+        .log-entry.info { color: var(--accent-cyan); }
+        .log-entry.success { color: var(--accent-emerald); }
+        .log-entry.error { color: var(--accent-rose); }
+        .log-entry.event { color: var(--accent-violet); }
 
-        @media (max-width: 1100px) {
-            .main-content {
-                grid-template-columns: 1fr;
-            }
+        .minimap {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            width: 180px;
+            height: 180px;
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 10px;
+            overflow: hidden;
         }
 
-        @media (max-width: 600px) {
-            .connection-form {
+        #minimap-canvas {
+            width: 100%;
+            height: 100%;
+        }
+
+        .pointer-lock-hint {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 16px 24px;
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 10px;
+            font-size: 0.9rem;
+            color: var(--text-mid);
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+
+        .pointer-lock-hint.visible {
+            opacity: 1;
+        }
+
+        @media (max-width: 900px) {
+            .app-container {
                 grid-template-columns: 1fr;
+                grid-template-rows: 60px 1fr auto;
+            }
+
+            .sidebar {
+                max-height: 40vh;
+                overflow-y: auto;
+            }
+
+            .minimap {
+                width: 120px;
+                height: 120px;
             }
         }
     </style>
 </head>
 <body>
-    <div class="bg-grid"></div>
-
-    <div class="container">
+    <div class="app-container">
         <header>
-            <div class="logo">
-                <div class="logo-icon">🤖</div>
+            <div class="brand">
+                <div class="brand-icon">⛏️</div>
                 <h1>Minecraft Bot</h1>
             </div>
-            <div class="status-bar">
-                <div class="status-badge">
-                    <div class="status-dot" id="ws-status"></div>
-                    <span id="ws-status-text">WebSocket</span>
+            <div class="status-group">
+                <div class="status-pill">
+                    <div class="status-dot" id="ws-dot"></div>
+                    <span id="ws-text">Connecting...</span>
                 </div>
-                <div class="status-badge">
-                    <div class="status-dot" id="bot-status"></div>
-                    <span id="bot-status-text">Bot Offline</span>
+                <div class="status-pill">
+                    <div class="status-dot" id="bot-dot"></div>
+                    <span id="bot-text">Offline</span>
                 </div>
             </div>
         </header>
 
-        <div class="main-content">
-            <div class="left-panel">
-                <div class="card">
-                    <div class="card-header">
-                        <div class="card-icon">🔌</div>
-                        <span class="card-title">Server Connection</span>
+        <div class="main-view" id="main-view">
+            <canvas id="render-canvas"></canvas>
+            <div class="render-overlay" id="render-overlay">
+                <div class="overlay-content">
+                    <div class="overlay-icon">🌍</div>
+                    <div class="overlay-text">Connect to a Minecraft server to begin</div>
                     </div>
-                    <div class="connection-form">
-                        <div class="form-group">
-                            <label class="form-label">Host</label>
-                            <input type="text" class="form-input" id="mc-host" value="localhost">
                         </div>
-                        <div class="form-group">
-                            <label class="form-label">Port</label>
-                            <input type="number" class="form-input" id="mc-port" value="25565">
+            <div class="hud-layer" id="hud-layer">
+                <div class="hud-compass">
+                    <div class="compass-strip" id="compass-strip">
+                        <span class="compass-marker">W</span>
+                        <span class="compass-marker cardinal">N</span>
+                        <span class="compass-marker">E</span>
+                        <span class="compass-marker cardinal">S</span>
+                        <span class="compass-marker">W</span>
+                        <span class="compass-marker cardinal">N</span>
+                        <span class="compass-marker">E</span>
+                        <span class="compass-marker cardinal">S</span>
+                        <span class="compass-marker">W</span>
                         </div>
-                        <div class="form-group">
-                            <label class="form-label">Username</label>
-                            <input type="text" class="form-input" id="mc-username" value="PythonBot">
+                    <div class="compass-center"></div>
                         </div>
+                <div class="hud-coords">
+                    <div class="coord-row">
+                        <span class="coord-label">X</span>
+                        <span class="coord-value" id="coord-x">0.0</span>
+                        <span class="coord-label">Y</span>
+                        <span class="coord-value" id="coord-y">0.0</span>
+                        <span class="coord-label">Z</span>
+                        <span class="coord-value" id="coord-z">0.0</span>
                     </div>
-                    <div class="btn-group">
-                        <button class="btn btn-primary" id="btn-connect" onclick="connectBot()">
-                            Connect Bot
-                        </button>
-                        <button class="btn btn-danger" id="btn-disconnect" onclick="disconnectBot()">
-                            Disconnect
-                        </button>
                     </div>
+                <div class="hud-crosshair">
+                    <div class="crosshair-h"></div>
+                    <div class="crosshair-v"></div>
                 </div>
+                <div class="hud-fps" id="hud-fps">-- FPS</div>
+                <div class="minimap">
+                    <canvas id="minimap-canvas"></canvas>
+                    </div>
+                            </div>
+            <div class="pointer-lock-hint" id="pointer-hint">Click to control camera</div>
+                            </div>
 
-                <div class="card" style="flex: 1;">
-                    <div class="card-header">
-                        <div class="card-icon">🌍</div>
-                        <span class="card-title">World View</span>
-                    </div>
-                    <div class="world-view">
-                        <div class="world-canvas-container">
-                            <canvas id="world-canvas"></canvas>
-                            <div class="world-overlay" id="world-overlay">
-                                <span>Connect to a Minecraft server to view the world</span>
+        <div class="sidebar">
+            <div class="panel">
+                <div class="panel-header">
+                    <span class="panel-icon">🔌</span>
+                    <span>Connection</span>
                             </div>
-                            <div class="compass">
-                                <div class="compass-needle" id="compass-needle"></div>
-                            </div>
-                            <div class="position-display">
-                                <span id="pos-display">X: 0 Y: 0 Z: 0</span>
-                            </div>
+                <div class="panel-body">
+                    <div class="connection-grid">
+                        <div class="input-group">
+                            <label class="input-label">Host</label>
+                            <input type="text" class="input-field" id="mc-host" value="localhost">
                         </div>
+                        <div class="input-group">
+                            <label class="input-label">Port</label>
+                            <input type="number" class="input-field" id="mc-port" value="25565">
                     </div>
+                        <div class="input-group full">
+                            <label class="input-label">Username</label>
+                            <input type="text" class="input-field" id="mc-username" value="PythonBot">
                 </div>
+                    </div>
+                    <div class="btn-row">
+                        <button class="btn btn-primary" id="btn-connect" onclick="connectBot()">Connect</button>
+                        <button class="btn btn-danger" id="btn-disconnect" onclick="disconnectBot()">Disconnect</button>
+                        </div>
+                        </div>
+                        </div>
 
-                <div class="card">
-                    <div class="card-header">
-                        <div class="card-icon">⌨️</div>
-                        <span class="card-title">Controls</span>
-                    </div>
-                    <div class="controls-section">
-                        <div class="control-key" id="key-q" data-action="drop">
-                            <span class="key-label">Q</span>
-                            <span class="key-action">Drop</span>
+            <div class="panel">
+                <div class="panel-header">
+                    <span class="panel-icon">❤️</span>
+                    <span>Status</span>
                         </div>
-                        <div class="control-key" id="key-w" data-action="forward">
-                            <span class="key-label">W</span>
-                            <span class="key-action">Forward</span>
+                <div class="panel-body">
+                    <div class="bar-group">
+                        <div class="bar-header">
+                            <span class="bar-label">Health</span>
+                            <span class="bar-value" id="health-val">20/20</span>
                         </div>
-                        <div class="control-key" id="key-e" data-action="inventory">
-                            <span class="key-label">E</span>
-                            <span class="key-action">Inventory</span>
+                        <div class="bar-track">
+                            <div class="bar-fill health" id="health-bar" style="width: 100%"></div>
                         </div>
-                        <div class="control-key" id="key-a" data-action="left">
-                            <span class="key-label">A</span>
-                            <span class="key-action">Left</span>
                         </div>
-                        <div class="control-key" id="key-s" data-action="backward">
-                            <span class="key-label">S</span>
-                            <span class="key-action">Backward</span>
+                    <div class="bar-group">
+                        <div class="bar-header">
+                            <span class="bar-label">Hunger</span>
+                            <span class="bar-value" id="food-val">20/20</span>
                         </div>
-                        <div class="control-key" id="key-d" data-action="right">
-                            <span class="key-label">D</span>
-                            <span class="key-action">Right</span>
-                        </div>
-                        <div class="control-key" id="key-shift" data-action="sneak">
-                            <span class="key-label">⇧</span>
-                            <span class="key-action">Sneak</span>
-                        </div>
-                        <div class="control-key" id="key-space" data-action="jump">
-                            <span class="key-label">␣</span>
-                            <span class="key-action">Jump</span>
-                        </div>
-                        <div class="control-key" id="key-ctrl" data-action="sprint">
-                            <span class="key-label">⌃</span>
-                            <span class="key-action">Sprint</span>
+                        <div class="bar-track">
+                            <div class="bar-fill food" id="food-bar" style="width: 100%"></div>
                         </div>
                     </div>
+                    <div class="vitals-grid">
+                        <div class="vital-card">
+                            <div class="vital-value" id="chunks-val">0</div>
+                            <div class="vital-label">Chunks</div>
                 </div>
+                        <div class="vital-card">
+                            <div class="vital-value" id="entities-val">0</div>
+                            <div class="vital-label">Entities</div>
             </div>
+                    </div>
+                        </div>
+                        </div>
 
-            <div class="right-panel">
-                <div class="card">
-                    <div class="card-header">
-                        <div class="card-icon">❤️</div>
-                        <span class="card-title">Player Status</span>
+            <div class="panel">
+                <div class="panel-header">
+                    <span class="panel-icon">⌨️</span>
+                    <span>Controls</span>
                     </div>
-                    <div class="health-bar">
-                        <div class="health-bar-label">
-                            <span>Health</span>
-                            <span id="health-value">20/20</span>
+                <div class="panel-body">
+                    <div class="controls-grid">
+                        <div class="control-key" id="key-q">
+                            <span class="key-char">Q</span>
+                            <span class="key-label">Drop</span>
                         </div>
-                        <div class="health-bar-track">
-                            <div class="health-bar-fill" id="health-fill" style="width: 100%"></div>
+                        <div class="control-key" id="key-w">
+                            <span class="key-char">W</span>
+                            <span class="key-label">Forward</span>
                         </div>
+                        <div class="control-key" id="key-e">
+                            <span class="key-char">E</span>
+                            <span class="key-label">Use</span>
                     </div>
-                    <div class="health-bar food-bar">
-                        <div class="health-bar-label">
-                            <span>Food</span>
-                            <span id="food-value">20/20</span>
+                        <div class="control-key" id="key-a">
+                            <span class="key-char">A</span>
+                            <span class="key-label">Left</span>
                         </div>
-                        <div class="health-bar-track">
-                            <div class="health-bar-fill" id="food-fill" style="width: 100%"></div>
+                        <div class="control-key" id="key-s">
+                            <span class="key-char">S</span>
+                            <span class="key-label">Back</span>
                         </div>
+                        <div class="control-key" id="key-d">
+                            <span class="key-char">D</span>
+                            <span class="key-label">Right</span>
+                        </div>
+                        <div class="control-key" id="key-shift">
+                            <span class="key-char">⇧</span>
+                            <span class="key-label">Sneak</span>
+                        </div>
+                        <div class="control-key" id="key-space">
+                            <span class="key-char">␣</span>
+                            <span class="key-label">Jump</span>
                     </div>
-                    <div class="stats-grid">
-                        <div class="stat-card">
-                            <div class="stat-value" id="stat-chunks">0</div>
-                            <div class="stat-label">Chunks</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-value" id="stat-entities">0</div>
-                            <div class="stat-label">Entities</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-value" id="stat-time">0</div>
-                            <div class="stat-label">Time</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-value" id="stat-gamemode">?</div>
-                            <div class="stat-label">Gamemode</div>
-                        </div>
+                        <div class="control-key" id="key-ctrl">
+                            <span class="key-char">⌃</span>
+                            <span class="key-label">Sprint</span>
+                </div>
+                    </div>
                     </div>
                 </div>
 
-                <div class="card">
-                    <div class="card-header">
-                        <div class="card-icon">💬</div>
-                        <span class="card-title">Chat</span>
+            <div class="panel log-panel">
+                <div class="panel-header">
+                    <span class="panel-icon">📋</span>
+                    <span>Log</span>
                     </div>
-                    <div class="chat-section">
-                        <input type="text" class="chat-input" id="chat-input" placeholder="Type a message...">
-                        <button class="btn btn-secondary" onclick="sendChat()">Send</button>
-                    </div>
-                </div>
-
-                <div class="card" style="flex: 1;">
-                    <div class="card-header">
-                        <div class="card-icon">📋</div>
-                        <span class="card-title">Event Log</span>
-                    </div>
-                    <div class="log-container" id="log-container">
+                <div class="log-scroll" id="log-scroll">
                         <div class="log-entry info">Ready to connect...</div>
-                    </div>
                 </div>
             </div>
         </div>
@@ -708,56 +796,489 @@
     <script>
         const WS_URL = `ws://${window.location.host}/ws`;
         let ws = null;
-        let botState = null;
+        let state = null;
+        let canvas, gl, minimapCanvas, minimapCtx;
         let pressedKeys = new Set();
-        let canvas, ctx;
+        let pointerLocked = false;
+        let frameCount = 0;
+        let lastFpsTime = performance.now();
+
+        let camera = { yaw: 0, pitch: 0 };
+        let worldData = { chunks: [], entities: [], playerPos: { x: 0, y: 64, z: 0 } };
+
+        let shaderProgram, posBuffer, colorBuffer;
+        let projMatrix, viewMatrix, modelMatrix;
 
         function init() {
-            canvas = document.getElementById('world-canvas');
-            ctx = canvas.getContext('2d');
+            canvas = document.getElementById('render-canvas');
+            minimapCanvas = document.getElementById('minimap-canvas');
+            minimapCtx = minimapCanvas.getContext('2d');
+
+            initWebGL();
             resizeCanvas();
             window.addEventListener('resize', resizeCanvas);
 
-            document.addEventListener('keydown', handleKeyDown);
-            document.addEventListener('keyup', handleKeyUp);
-            
-            document.getElementById('chat-input').addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') sendChat();
+            document.addEventListener('keydown', onKeyDown);
+            document.addEventListener('keyup', onKeyUp);
+            document.addEventListener('mousemove', onMouseMove);
+
+            const mainView = document.getElementById('main-view');
+            mainView.addEventListener('click', () => {
+                if (!pointerLocked) {
+                    canvas.requestPointerLock();
+                }
+            });
+
+            document.addEventListener('pointerlockchange', () => {
+                pointerLocked = document.pointerLockElement === canvas;
+                document.getElementById('pointer-hint').classList.toggle('visible', !pointerLocked && state?.connected);
             });
 
             connectWebSocket();
+            requestAnimationFrame(render);
+        }
+
+        function initWebGL() {
+            gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
+            if (!gl) {
+                console.error('WebGL not supported');
+                return;
+            }
+
+            const vsSource = `
+                attribute vec4 aPosition;
+                attribute vec4 aColor;
+                uniform mat4 uProjection;
+                uniform mat4 uView;
+                uniform mat4 uModel;
+                varying lowp vec4 vColor;
+                void main() {
+                    gl_Position = uProjection * uView * uModel * aPosition;
+                    vColor = aColor;
+                }
+            `;
+
+            const fsSource = `
+                precision mediump float;
+                varying lowp vec4 vColor;
+                uniform float uFog;
+                void main() {
+                    float depth = gl_FragCoord.z / gl_FragCoord.w;
+                    float fogFactor = 1.0 - clamp(depth * uFog, 0.0, 0.8);
+                    vec3 fogColor = vec3(0.02, 0.02, 0.03);
+                    gl_FragColor = vec4(mix(fogColor, vColor.rgb, fogFactor), vColor.a);
+                }
+            `;
+
+            const vs = compileShader(gl.VERTEX_SHADER, vsSource);
+            const fs = compileShader(gl.FRAGMENT_SHADER, fsSource);
+
+            shaderProgram = gl.createProgram();
+            gl.attachShader(shaderProgram, vs);
+            gl.attachShader(shaderProgram, fs);
+            gl.linkProgram(shaderProgram);
+
+            if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
+                console.error('Shader link failed:', gl.getProgramInfoLog(shaderProgram));
+            }
+
+            gl.useProgram(shaderProgram);
+            gl.enable(gl.DEPTH_TEST);
+            gl.enable(gl.CULL_FACE);
+            gl.cullFace(gl.BACK);
+        }
+
+        function compileShader(type, source) {
+            const shader = gl.createShader(type);
+            gl.shaderSource(shader, source);
+            gl.compileShader(shader);
+            if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+                console.error('Shader compile error:', gl.getShaderInfoLog(shader));
+            }
+            return shader;
         }
 
         function resizeCanvas() {
-            const container = canvas.parentElement;
-            canvas.width = container.clientWidth;
-            canvas.height = container.clientHeight;
-            renderWorld();
+            const rect = canvas.parentElement.getBoundingClientRect();
+            canvas.width = rect.width * window.devicePixelRatio;
+            canvas.height = rect.height * window.devicePixelRatio;
+            canvas.style.width = rect.width + 'px';
+            canvas.style.height = rect.height + 'px';
+
+            minimapCanvas.width = 180;
+            minimapCanvas.height = 180;
+
+            if (gl) {
+                gl.viewport(0, 0, canvas.width, canvas.height);
+            }
+        }
+
+        function createMatrix4() {
+            return new Float32Array([
+                1, 0, 0, 0,
+                0, 1, 0, 0,
+                0, 0, 1, 0,
+                0, 0, 0, 1
+            ]);
+        }
+
+        function perspective(fov, aspect, near, far) {
+            const f = 1.0 / Math.tan(fov / 2);
+            const nf = 1 / (near - far);
+            return new Float32Array([
+                f / aspect, 0, 0, 0,
+                0, f, 0, 0,
+                0, 0, (far + near) * nf, -1,
+                0, 0, 2 * far * near * nf, 0
+            ]);
+        }
+
+        function lookAt(eye, center, up) {
+            const z = normalize([eye[0] - center[0], eye[1] - center[1], eye[2] - center[2]]);
+            const x = normalize(cross(up, z));
+            const y = cross(z, x);
+
+            return new Float32Array([
+                x[0], y[0], z[0], 0,
+                x[1], y[1], z[1], 0,
+                x[2], y[2], z[2], 0,
+                -dot(x, eye), -dot(y, eye), -dot(z, eye), 1
+            ]);
+        }
+
+        function normalize(v) {
+            const len = Math.sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
+            return [v[0]/len, v[1]/len, v[2]/len];
+        }
+
+        function cross(a, b) {
+            return [
+                a[1]*b[2] - a[2]*b[1],
+                a[2]*b[0] - a[0]*b[2],
+                a[0]*b[1] - a[1]*b[0]
+            ];
+        }
+
+        function dot(a, b) {
+            return a[0]*b[0] + a[1]*b[1] + a[2]*b[2];
+        }
+
+        function translate(m, v) {
+            const out = new Float32Array(m);
+            out[12] = m[0]*v[0] + m[4]*v[1] + m[8]*v[2] + m[12];
+            out[13] = m[1]*v[0] + m[5]*v[1] + m[9]*v[2] + m[13];
+            out[14] = m[2]*v[0] + m[6]*v[1] + m[10]*v[2] + m[14];
+            return out;
+        }
+
+        function render() {
+            if (!gl) {
+                requestAnimationFrame(render);
+                return;
+            }
+
+            frameCount++;
+            const now = performance.now();
+            if (now - lastFpsTime >= 1000) {
+                document.getElementById('hud-fps').textContent = `${frameCount} FPS`;
+                frameCount = 0;
+                lastFpsTime = now;
+            }
+
+            gl.clearColor(0.02, 0.02, 0.03, 1.0);
+            gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+            if (state?.connected) {
+                renderWorld();
+                renderMinimap();
+            }
+
+            requestAnimationFrame(render);
+        }
+
+        function renderWorld() {
+            const aspect = canvas.width / canvas.height;
+            projMatrix = perspective(Math.PI / 3, aspect, 0.1, 1000);
+
+            const pos = worldData.playerPos;
+            const yawRad = camera.yaw * Math.PI / 180;
+            const pitchRad = camera.pitch * Math.PI / 180;
+
+            const eyeHeight = 1.62;
+            const eye = [pos.x, pos.y + eyeHeight, pos.z];
+            const lookDir = [
+                -Math.sin(yawRad) * Math.cos(pitchRad),
+                Math.sin(pitchRad),
+                Math.cos(yawRad) * Math.cos(pitchRad)
+            ];
+            const center = [eye[0] + lookDir[0], eye[1] + lookDir[1], eye[2] + lookDir[2]];
+            viewMatrix = lookAt(eye, center, [0, 1, 0]);
+
+            const projLoc = gl.getUniformLocation(shaderProgram, 'uProjection');
+            const viewLoc = gl.getUniformLocation(shaderProgram, 'uView');
+            const modelLoc = gl.getUniformLocation(shaderProgram, 'uModel');
+            const fogLoc = gl.getUniformLocation(shaderProgram, 'uFog');
+
+            gl.uniformMatrix4fv(projLoc, false, projMatrix);
+            gl.uniformMatrix4fv(viewLoc, false, viewMatrix);
+            gl.uniform1f(fogLoc, 0.02);
+
+            renderGround(modelLoc);
+            renderChunkOutlines(modelLoc);
+            renderEntities(modelLoc);
+            renderGridFloor(modelLoc);
+        }
+
+        function renderGround(modelLoc) {
+            const groundSize = 200;
+            const y = -0.01;
+            const vertices = new Float32Array([
+                -groundSize, y, -groundSize,
+                 groundSize, y, -groundSize,
+                 groundSize, y,  groundSize,
+                -groundSize, y, -groundSize,
+                 groundSize, y,  groundSize,
+                -groundSize, y,  groundSize,
+            ]);
+
+            const colors = new Float32Array([
+                0.08, 0.12, 0.08, 1,
+                0.08, 0.12, 0.08, 1,
+                0.06, 0.10, 0.06, 1,
+                0.08, 0.12, 0.08, 1,
+                0.06, 0.10, 0.06, 1,
+                0.06, 0.10, 0.06, 1,
+            ]);
+
+            drawMesh(vertices, colors, modelLoc, createMatrix4());
+        }
+
+        function renderGridFloor(modelLoc) {
+            const gridSize = 100;
+            const spacing = 16;
+            const vertices = [];
+            const colors = [];
+            const y = 0;
+
+            for (let x = -gridSize; x <= gridSize; x += spacing) {
+                vertices.push(x, y, -gridSize, x, y, gridSize);
+                colors.push(0.1, 0.15, 0.1, 0.5, 0.1, 0.15, 0.1, 0.5);
+            }
+            for (let z = -gridSize; z <= gridSize; z += spacing) {
+                vertices.push(-gridSize, y, z, gridSize, y, z);
+                colors.push(0.1, 0.15, 0.1, 0.5, 0.1, 0.15, 0.1, 0.5);
+            }
+
+            if (vertices.length > 0) {
+                drawLines(new Float32Array(vertices), new Float32Array(colors), modelLoc, createMatrix4());
+            }
+        }
+
+        function renderChunkOutlines(modelLoc) {
+            const chunks = worldData.chunks || [];
+            const chunkHeight = 16;
+            const y = 64;
+
+            chunks.forEach(chunk => {
+                const cx = chunk.x * 16;
+                const cz = chunk.z * 16;
+
+                const vertices = new Float32Array([
+                    cx, y, cz,
+                    cx + 16, y, cz,
+                    cx + 16, y, cz,
+                    cx + 16, y, cz + 16,
+                    cx + 16, y, cz + 16,
+                    cx, y, cz + 16,
+                    cx, y, cz + 16,
+                    cx, y, cz,
+                ]);
+
+                const colors = new Float32Array([
+                    0.2, 0.8, 0.4, 0.6,
+                    0.2, 0.8, 0.4, 0.6,
+                    0.2, 0.8, 0.4, 0.6,
+                    0.2, 0.8, 0.4, 0.6,
+                    0.2, 0.8, 0.4, 0.6,
+                    0.2, 0.8, 0.4, 0.6,
+                    0.2, 0.8, 0.4, 0.6,
+                    0.2, 0.8, 0.4, 0.6,
+                ]);
+
+                drawLines(vertices, colors, modelLoc, createMatrix4());
+            });
+        }
+
+        function renderEntities(modelLoc) {
+            const entities = worldData.entities || [];
+
+            entities.forEach(entity => {
+                const size = 0.5;
+                const x = entity.x;
+                const y = entity.y;
+                const z = entity.z;
+
+                const vertices = new Float32Array([
+                    x-size, y, z-size,  x+size, y, z-size,  x+size, y+size*2, z-size,
+                    x-size, y, z-size,  x+size, y+size*2, z-size,  x-size, y+size*2, z-size,
+
+                    x+size, y, z-size,  x+size, y, z+size,  x+size, y+size*2, z+size,
+                    x+size, y, z-size,  x+size, y+size*2, z+size,  x+size, y+size*2, z-size,
+
+                    x+size, y, z+size,  x-size, y, z+size,  x-size, y+size*2, z+size,
+                    x+size, y, z+size,  x-size, y+size*2, z+size,  x+size, y+size*2, z+size,
+
+                    x-size, y, z+size,  x-size, y, z-size,  x-size, y+size*2, z-size,
+                    x-size, y, z+size,  x-size, y+size*2, z-size,  x-size, y+size*2, z+size,
+
+                    x-size, y+size*2, z-size,  x+size, y+size*2, z-size,  x+size, y+size*2, z+size,
+                    x-size, y+size*2, z-size,  x+size, y+size*2, z+size,  x-size, y+size*2, z+size,
+                ]);
+
+                const r = 0.5 + (entity.type % 3) * 0.2;
+                const g = 0.3 + (entity.type % 5) * 0.1;
+                const b = 0.8;
+
+                const colors = [];
+                for (let i = 0; i < 30; i++) {
+                    colors.push(r, g, b, 1);
+                }
+
+                drawMesh(vertices, new Float32Array(colors), modelLoc, createMatrix4());
+            });
+        }
+
+        function drawMesh(vertices, colors, modelLoc, modelMatrix) {
+            const posBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, posBuffer);
+            gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+
+            const posLoc = gl.getAttribLocation(shaderProgram, 'aPosition');
+            gl.enableVertexAttribArray(posLoc);
+            gl.vertexAttribPointer(posLoc, 3, gl.FLOAT, false, 0, 0);
+
+            const colorBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+            gl.bufferData(gl.ARRAY_BUFFER, colors, gl.STATIC_DRAW);
+
+            const colorLoc = gl.getAttribLocation(shaderProgram, 'aColor');
+            gl.enableVertexAttribArray(colorLoc);
+            gl.vertexAttribPointer(colorLoc, 4, gl.FLOAT, false, 0, 0);
+
+            gl.uniformMatrix4fv(modelLoc, false, modelMatrix);
+            gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 3);
+
+            gl.deleteBuffer(posBuffer);
+            gl.deleteBuffer(colorBuffer);
+        }
+
+        function drawLines(vertices, colors, modelLoc, modelMatrix) {
+            const posBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, posBuffer);
+            gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+
+            const posLoc = gl.getAttribLocation(shaderProgram, 'aPosition');
+            gl.enableVertexAttribArray(posLoc);
+            gl.vertexAttribPointer(posLoc, 3, gl.FLOAT, false, 0, 0);
+
+            const colorBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+            gl.bufferData(gl.ARRAY_BUFFER, colors, gl.STATIC_DRAW);
+
+            const colorLoc = gl.getAttribLocation(shaderProgram, 'aColor');
+            gl.enableVertexAttribArray(colorLoc);
+            gl.vertexAttribPointer(colorLoc, 4, gl.FLOAT, false, 0, 0);
+
+            gl.uniformMatrix4fv(modelLoc, false, modelMatrix);
+            gl.drawArrays(gl.LINES, 0, vertices.length / 3);
+
+            gl.deleteBuffer(posBuffer);
+            gl.deleteBuffer(colorBuffer);
+        }
+
+        function renderMinimap() {
+            const ctx = minimapCtx;
+            const w = minimapCanvas.width;
+            const h = minimapCanvas.height;
+            const scale = 2;
+
+            ctx.fillStyle = 'rgba(10, 10, 16, 0.9)';
+            ctx.fillRect(0, 0, w, h);
+
+            const cx = w / 2;
+            const cy = h / 2;
+            const pos = worldData.playerPos;
+
+            ctx.strokeStyle = 'rgba(16, 185, 129, 0.3)';
+            ctx.lineWidth = 1;
+
+            const chunks = worldData.chunks || [];
+            chunks.forEach(chunk => {
+                const dx = (chunk.x * 16 + 8 - pos.x) * scale;
+                const dz = (chunk.z * 16 + 8 - pos.z) * scale;
+
+                if (Math.abs(dx) < w/2 && Math.abs(dz) < h/2) {
+                    ctx.strokeRect(cx + dx - 8*scale, cy + dz - 8*scale, 16*scale, 16*scale);
+                }
+            });
+
+            const entities = worldData.entities || [];
+            ctx.fillStyle = 'rgba(139, 92, 246, 0.8)';
+            entities.forEach(e => {
+                const dx = (e.x - pos.x) * scale;
+                const dz = (e.z - pos.z) * scale;
+
+                if (Math.abs(dx) < w/2 && Math.abs(dz) < h/2) {
+                ctx.beginPath();
+                    ctx.arc(cx + dx, cy + dz, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            });
+
+            ctx.save();
+            ctx.translate(cx, cy);
+            ctx.rotate(camera.yaw * Math.PI / 180);
+
+            ctx.fillStyle = '#10b981';
+            ctx.beginPath();
+            ctx.moveTo(0, -8);
+            ctx.lineTo(-5, 6);
+            ctx.lineTo(5, 6);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        function updateCompass() {
+            const yaw = camera.yaw % 360;
+            const offset = -(yaw / 360) * 400 + 100;
+            document.getElementById('compass-strip').style.left = offset + 'px';
         }
 
         function connectWebSocket() {
             ws = new WebSocket(WS_URL);
-            
+
             ws.onopen = () => {
-                updateWsStatus(true);
+                updateStatus('ws', true, 'Connected');
                 addLog('WebSocket connected', 'success');
             };
-            
+
             ws.onclose = () => {
-                updateWsStatus(false);
+                updateStatus('ws', false, 'Disconnected');
                 addLog('WebSocket disconnected', 'error');
                 setTimeout(connectWebSocket, 3000);
             };
-            
+
             ws.onerror = () => {
-                updateWsStatus(false);
+                updateStatus('ws', false, 'Error');
             };
-            
+
             ws.onmessage = (event) => {
                 const data = JSON.parse(event.data);
-                
+
                 if (data.type === 'state') {
-                    botState = data.data;
+                    state = data.data;
                     updateUI();
                 } else if (data.type === 'event') {
                     handleEvent(data);
@@ -771,121 +1292,50 @@
             };
         }
 
-        function updateWsStatus(connected) {
-            const dot = document.getElementById('ws-status');
-            const text = document.getElementById('ws-status-text');
-            dot.classList.toggle('online', connected);
-            text.textContent = connected ? 'Connected' : 'Disconnected';
-        }
-
-        function updateBotStatus(connected) {
-            const dot = document.getElementById('bot-status');
-            const text = document.getElementById('bot-status-text');
-            dot.classList.toggle('online', connected);
-            text.textContent = connected ? 'Bot Online' : 'Bot Offline';
-            document.getElementById('world-overlay').classList.toggle('hidden', connected);
+        function updateStatus(type, online, text) {
+            document.getElementById(`${type}-dot`).classList.toggle('live', online);
+            document.getElementById(`${type}-text`).textContent = text;
         }
 
         function updateUI() {
-            if (!botState) return;
+            if (!state) return;
 
-            updateBotStatus(botState.connected);
+            const connected = state.connected;
+            updateStatus('bot', connected, connected ? 'Online' : 'Offline');
+            document.getElementById('render-overlay').classList.toggle('hidden', connected);
+            document.getElementById('hud-layer').style.display = connected ? 'block' : 'none';
 
-            const pos = botState.player?.position;
-            if (pos) {
-                document.getElementById('pos-display').textContent = 
-                    `X: ${pos.x.toFixed(1)} Y: ${pos.y.toFixed(1)} Z: ${pos.z.toFixed(1)}`;
-                
-                const yaw = pos.yaw || 0;
-                document.getElementById('compass-needle').style.transform = `rotate(${yaw}deg)`;
+            if (state.player?.position) {
+                const pos = state.player.position;
+                worldData.playerPos = { x: pos.x, y: pos.y, z: pos.z };
+                camera.yaw = pos.yaw || 0;
+                camera.pitch = -(pos.pitch || 0);
+
+                document.getElementById('coord-x').textContent = pos.x.toFixed(1);
+                document.getElementById('coord-y').textContent = pos.y.toFixed(1);
+                document.getElementById('coord-z').textContent = pos.z.toFixed(1);
+
+                updateCompass();
             }
 
-            const health = botState.player?.health || 0;
-            const food = botState.player?.food || 0;
-            
-            document.getElementById('health-value').textContent = `${health.toFixed(0)}/20`;
-            document.getElementById('health-fill').style.width = `${(health / 20) * 100}%`;
-            
-            document.getElementById('food-value').textContent = `${food}/20`;
-            document.getElementById('food-fill').style.width = `${(food / 20) * 100}%`;
+            const health = state.player?.health || 0;
+            const food = state.player?.food || 0;
+            document.getElementById('health-val').textContent = `${Math.floor(health)}/20`;
+            document.getElementById('health-bar').style.width = `${(health/20)*100}%`;
+            document.getElementById('food-val').textContent = `${food}/20`;
+            document.getElementById('food-bar').style.width = `${(food/20)*100}%`;
 
-            document.getElementById('stat-chunks').textContent = botState.world?.loaded_chunks_count || 0;
-            document.getElementById('stat-entities').textContent = botState.world?.entities_count || 0;
-            
-            const timeOfDay = botState.world?.time_of_day || 0;
-            const hours = Math.floor((timeOfDay / 1000 + 6) % 24);
-            const mins = Math.floor((timeOfDay % 1000) / 1000 * 60);
-            document.getElementById('stat-time').textContent = `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
-            
-            const gamemodes = ['Survival', 'Creative', 'Adventure', 'Spectator'];
-            document.getElementById('stat-gamemode').textContent = gamemodes[botState.player?.gamemode] || '?';
+            document.getElementById('chunks-val').textContent = state.world?.loaded_chunks_count || 0;
+            document.getElementById('entities-val').textContent = state.world?.entities_count || 0;
 
-            botState.movement_keys?.forEach(key => {
-                const el = document.getElementById(`key-${key}`);
-                if (el) el.classList.add('active');
+            worldData.chunks = state.world?.visible_chunks || [];
+            worldData.entities = state.entities || [];
+
+            ['w', 'a', 's', 'd'].forEach(k => {
+                document.getElementById(`key-${k}`).classList.toggle('active', state.movement_keys?.includes(k));
             });
-            ['w', 'a', 's', 'd', 'shift', 'ctrl', 'space'].forEach(key => {
-                if (!botState.movement_keys?.includes(key)) {
-                    const el = document.getElementById(`key-${key}`);
-                    if (el) el.classList.remove('active');
-                }
-            });
-
-            if (botState.is_sneaking) document.getElementById('key-shift').classList.add('active');
-            if (botState.is_sprinting) document.getElementById('key-ctrl').classList.add('active');
-
-            renderWorld();
-        }
-
-        function renderWorld() {
-            if (!ctx) return;
-
-            ctx.fillStyle = '#1a1a2e';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            if (!botState || !botState.connected) return;
-
-            const centerX = canvas.width / 2;
-            const centerY = canvas.height / 2;
-
-            ctx.save();
-            ctx.translate(centerX, centerY);
-            
-            const yaw = botState.player?.position?.yaw || 0;
-            ctx.rotate(-yaw * Math.PI / 180);
-
-            ctx.strokeStyle = 'rgba(63, 185, 80, 0.3)';
-            ctx.lineWidth = 1;
-            const gridSize = 20;
-            const gridRange = 10;
-            
-            for (let x = -gridRange; x <= gridRange; x++) {
-                ctx.beginPath();
-                ctx.moveTo(x * gridSize, -gridRange * gridSize);
-                ctx.lineTo(x * gridSize, gridRange * gridSize);
-                ctx.stroke();
-            }
-            for (let y = -gridRange; y <= gridRange; y++) {
-                ctx.beginPath();
-                ctx.moveTo(-gridRange * gridSize, y * gridSize);
-                ctx.lineTo(gridRange * gridSize, y * gridSize);
-                ctx.stroke();
-            }
-
-            ctx.fillStyle = '#3fb950';
-            ctx.beginPath();
-            ctx.moveTo(0, -15);
-            ctx.lineTo(-8, 10);
-            ctx.lineTo(8, 10);
-            ctx.closePath();
-            ctx.fill();
-
-            ctx.restore();
-
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
-            ctx.font = '12px JetBrains Mono';
-            ctx.textAlign = 'center';
-            ctx.fillText('Top-down view (you are the triangle)', centerX, canvas.height - 20);
+            document.getElementById('key-shift').classList.toggle('active', state.is_sneaking);
+            document.getElementById('key-ctrl').classList.toggle('active', state.is_sprinting);
         }
 
         function handleEvent(data) {
@@ -893,8 +1343,8 @@
             if (event === 'join') {
                 addLog(`Joined game as ${data.player}`, 'success');
             } else if (event === 'spawn') {
-                const pos = data.position;
-                addLog(`Spawned at ${pos.x.toFixed(1)}, ${pos.y.toFixed(1)}, ${pos.z.toFixed(1)}`, 'event');
+                const p = data.position;
+                addLog(`Spawned at ${p.x.toFixed(1)}, ${p.y.toFixed(1)}, ${p.z.toFixed(1)}`, 'event');
             } else if (event === 'health') {
                 addLog(`Health: ${data.health.toFixed(1)}, Food: ${data.food}`, 'info');
             } else if (event === 'death') {
@@ -904,7 +1354,7 @@
             }
         }
 
-        function handleKeyDown(e) {
+        function onKeyDown(e) {
             if (document.activeElement.tagName === 'INPUT') return;
             
             const keyActions = {
@@ -927,14 +1377,10 @@
                 } else {
                     sendInput({ action, start: true });
                 }
-                
-                const keyMap = { 'w': 'w', 'a': 'a', 's': 's', 'd': 'd', ' ': 'space', 'Shift': 'shift', 'Control': 'ctrl' };
-                const el = document.getElementById(`key-${keyMap[e.key]}`);
-                if (el) el.classList.add('active');
             }
         }
 
-        function handleKeyUp(e) {
+        function onKeyUp(e) {
             const keyActions = {
                 'w': 'move_forward',
                 'a': 'move_left',
@@ -952,11 +1398,17 @@
                 if (action !== 'jump') {
                     sendInput({ action, start: false });
                 }
-                
-                const keyMap = { 'w': 'w', 'a': 'a', 's': 's', 'd': 'd', ' ': 'space', 'Shift': 'shift', 'Control': 'ctrl' };
-                const el = document.getElementById(`key-${keyMap[e.key]}`);
-                if (el) el.classList.remove('active');
             }
+        }
+
+        function onMouseMove(e) {
+            if (!pointerLocked || !state?.connected) return;
+
+            const sensitivity = 0.15;
+            const yawDelta = e.movementX * sensitivity;
+            const pitchDelta = -e.movementY * sensitivity;
+
+            sendInput({ action: 'look_relative', yaw_delta: yawDelta, pitch_delta: pitchDelta });
         }
 
         function sendInput(data) {
@@ -979,21 +1431,12 @@
             sendInput({ action: 'disconnect' });
         }
 
-        function sendChat() {
-            const input = document.getElementById('chat-input');
-            const message = input.value.trim();
-            if (message) {
-                sendInput({ action: 'chat', message });
-                addLog(`Chat: ${message}`, 'info');
-                input.value = '';
-            }
-        }
-
         function addLog(message, type = 'info') {
-            const container = document.getElementById('log-container');
+            const container = document.getElementById('log-scroll');
             const entry = document.createElement('div');
             entry.className = `log-entry ${type}`;
-            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            const time = new Date().toLocaleTimeString('en-US', { hour12: false });
+            entry.textContent = `[${time}] ${message}`;
             container.appendChild(entry);
             container.scrollTop = container.scrollHeight;
             
@@ -1006,4 +1449,3 @@
     </script>
 </body>
 </html>
-

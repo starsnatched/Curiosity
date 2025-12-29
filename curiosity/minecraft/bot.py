@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-import json
 import logging
 import math
 import signal
@@ -10,14 +9,13 @@ import time
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
-import aiohttp
-from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives.asymmetric import padding
-
 from curiosity.minecraft.protocol import (
+    ChunkData,
+    ChunkSection,
     ConnectionState,
     MinecraftProtocol,
     PacketBuffer,
+    PlayPacketIds,
     PlayerState,
     Position,
     VarInt,
@@ -36,9 +34,11 @@ class WorldState:
     time_of_day: int = 0
     weather: str = "clear"
     difficulty: int = 2
-    loaded_chunks: set[tuple[int, int]] = field(default_factory=set)
+    loaded_chunks: dict[tuple[int, int], ChunkData] = field(default_factory=dict)
     entities: dict[int, dict] = field(default_factory=dict)
     block_changes: list[dict] = field(default_factory=list)
+    world_height: int = 384
+    min_y: int = -64
 
 
 @dataclass
@@ -64,12 +64,16 @@ class MinecraftBot:
         self._keep_alive_task: asyncio.Task | None = None
         self._position_update_task: asyncio.Task | None = None
         self._last_keep_alive: int = 0
+        self._last_keep_alive_time: float = 0
         self._movement_keys: set[str] = set()
         self._is_sneaking = False
         self._is_sprinting = False
         self._target_yaw: float | None = None
         self._target_pitch: float | None = None
         self._in_configuration = False
+        self._joined_game = False
+        self._spawn_confirmed = False
+        self._chunk_batch_size = 0
         self._setup_packet_handlers()
 
     def _setup_packet_handlers(self) -> None:
@@ -77,21 +81,37 @@ class MinecraftBot:
         self._packet_handlers[(ConnectionState.LOGIN, 0x01)] = self._handle_encryption_request
         self._packet_handlers[(ConnectionState.LOGIN, 0x02)] = self._handle_login_success
         self._packet_handlers[(ConnectionState.LOGIN, 0x03)] = self._handle_set_compression
-        self._packet_handlers[(ConnectionState.PLAY, 0x27)] = self._handle_keep_alive
-        self._packet_handlers[(ConnectionState.PLAY, 0x42)] = self._handle_synchronize_player_position
-        self._packet_handlers[(ConnectionState.PLAY, 0x62)] = self._handle_update_health
-        self._packet_handlers[(ConnectionState.PLAY, 0x1F)] = self._handle_disconnect
-        self._packet_handlers[(ConnectionState.PLAY, 0x2C)] = self._handle_login_play
-        self._packet_handlers[(ConnectionState.PLAY, 0x5B)] = self._handle_set_default_spawn
-        self._packet_handlers[(ConnectionState.PLAY, 0x68)] = self._handle_game_event
-        self._packet_handlers[(ConnectionState.PLAY, 0x56)] = self._handle_set_time
-        self._packet_handlers[(ConnectionState.PLAY, 0x28)] = self._handle_chunk_data
-        self._packet_handlers[(ConnectionState.PLAY, 0x0A)] = self._handle_block_update
-        self._packet_handlers[(ConnectionState.PLAY, 0x01)] = self._handle_spawn_entity
-        self._packet_handlers[(ConnectionState.PLAY, 0x48)] = self._handle_remove_entities
-        self._packet_handlers[(ConnectionState.PLAY, 0x32)] = self._handle_entity_position
-        self._packet_handlers[(ConnectionState.PLAY, 0x33)] = self._handle_entity_position_rotation
-        self._packet_handlers[(ConnectionState.PLAY, 0x34)] = self._handle_entity_rotation
+
+        self._packet_handlers[(ConnectionState.CONFIGURATION, 0x01)] = self._handle_config_plugin_message
+        self._packet_handlers[(ConnectionState.CONFIGURATION, 0x02)] = self._handle_config_disconnect
+        self._packet_handlers[(ConnectionState.CONFIGURATION, 0x03)] = self._handle_config_finish
+        self._packet_handlers[(ConnectionState.CONFIGURATION, 0x04)] = self._handle_config_keep_alive
+        self._packet_handlers[(ConnectionState.CONFIGURATION, 0x07)] = self._handle_config_registry_data
+        self._packet_handlers[(ConnectionState.CONFIGURATION, 0x09)] = self._handle_config_resource_pack_push
+        self._packet_handlers[(ConnectionState.CONFIGURATION, 0x0C)] = self._handle_config_feature_flags
+        self._packet_handlers[(ConnectionState.CONFIGURATION, 0x0E)] = self._handle_config_known_packs
+
+        self._packet_handlers[(ConnectionState.PLAY, PlayPacketIds.KEEP_ALIVE)] = self._handle_keep_alive
+        self._packet_handlers[(ConnectionState.PLAY, PlayPacketIds.SYNCHRONIZE_PLAYER_POSITION)] = self._handle_synchronize_player_position
+        self._packet_handlers[(ConnectionState.PLAY, PlayPacketIds.SET_HEALTH)] = self._handle_update_health
+        self._packet_handlers[(ConnectionState.PLAY, PlayPacketIds.DISCONNECT)] = self._handle_disconnect
+        self._packet_handlers[(ConnectionState.PLAY, PlayPacketIds.LOGIN)] = self._handle_login_play
+        self._packet_handlers[(ConnectionState.PLAY, PlayPacketIds.SET_DEFAULT_SPAWN_POSITION)] = self._handle_set_default_spawn
+        self._packet_handlers[(ConnectionState.PLAY, PlayPacketIds.GAME_EVENT)] = self._handle_game_event
+        self._packet_handlers[(ConnectionState.PLAY, PlayPacketIds.UPDATE_TIME)] = self._handle_set_time
+        self._packet_handlers[(ConnectionState.PLAY, PlayPacketIds.CHUNK_DATA_AND_UPDATE_LIGHT)] = self._handle_chunk_data
+        self._packet_handlers[(ConnectionState.PLAY, PlayPacketIds.BLOCK_UPDATE)] = self._handle_block_update
+        self._packet_handlers[(ConnectionState.PLAY, PlayPacketIds.SPAWN_ENTITY)] = self._handle_spawn_entity
+        self._packet_handlers[(ConnectionState.PLAY, PlayPacketIds.REMOVE_ENTITIES)] = self._handle_remove_entities
+        self._packet_handlers[(ConnectionState.PLAY, PlayPacketIds.UPDATE_ENTITY_POSITION)] = self._handle_entity_position
+        self._packet_handlers[(ConnectionState.PLAY, PlayPacketIds.UPDATE_ENTITY_POSITION_AND_ROTATION)] = self._handle_entity_position_rotation
+        self._packet_handlers[(ConnectionState.PLAY, PlayPacketIds.UPDATE_ENTITY_ROTATION)] = self._handle_entity_rotation
+        self._packet_handlers[(ConnectionState.PLAY, PlayPacketIds.UNLOAD_CHUNK)] = self._handle_unload_chunk
+        self._packet_handlers[(ConnectionState.PLAY, PlayPacketIds.CHUNK_BATCH_START)] = self._handle_chunk_batch_start
+        self._packet_handlers[(ConnectionState.PLAY, PlayPacketIds.CHUNK_BATCH_FINISHED)] = self._handle_chunk_batch_finished
+        self._packet_handlers[(ConnectionState.PLAY, PlayPacketIds.START_CONFIGURATION)] = self._handle_start_configuration
+        self._packet_handlers[(ConnectionState.PLAY, PlayPacketIds.PING)] = self._handle_ping
+        self._packet_handlers[(ConnectionState.PLAY, PlayPacketIds.SET_CENTER_CHUNK)] = self._handle_set_center_chunk
 
     def on(self, event: str, handler: Callable) -> None:
         if event not in self._event_handlers:
@@ -118,6 +138,8 @@ class MinecraftBot:
             await self._protocol.send_login_start(self._config.username)
 
             self._running = True
+            self._joined_game = False
+            self._spawn_confirmed = False
             return True
         except Exception as e:
             logger.error(f"Failed to connect: {e}")
@@ -127,8 +149,16 @@ class MinecraftBot:
         self._running = False
         if self._keep_alive_task:
             self._keep_alive_task.cancel()
+            try:
+                await self._keep_alive_task
+            except asyncio.CancelledError:
+                pass
         if self._position_update_task:
             self._position_update_task.cancel()
+            try:
+                await self._position_update_task
+            except asyncio.CancelledError:
+                pass
         if self._protocol:
             await self._protocol.disconnect()
         await self._emit("disconnect")
@@ -145,7 +175,7 @@ class MinecraftBot:
                     )
                     await self._handle_packet(packet_id, buffer)
                 except asyncio.TimeoutError:
-                    logger.warning("Receive timeout, connection might be dead")
+                    logger.warning("Receive timeout")
                     if self._protocol.state == ConnectionState.PLAY:
                         continue
                     break
@@ -169,8 +199,6 @@ class MinecraftBot:
                 await handler(buffer)
             except Exception as e:
                 logger.debug(f"Error handling packet 0x{packet_id:02X} in state {state}: {e}")
-        else:
-            pass
 
     async def _handle_login_disconnect(self, buffer: PacketBuffer) -> None:
         reason = buffer.read_string()
@@ -190,6 +218,7 @@ class MinecraftBot:
             await self._protocol.send_login_acknowledged()
             self._in_configuration = True
             logger.info("Entering configuration phase...")
+            await self._protocol.send_configuration_client_information()
 
     async def _handle_set_compression(self, buffer: PacketBuffer) -> None:
         threshold = buffer.read_varint()
@@ -197,10 +226,64 @@ class MinecraftBot:
             self._protocol.set_compression(threshold)
         logger.info(f"Compression enabled with threshold {threshold}")
 
-    async def _handle_keep_alive(self, buffer: PacketBuffer) -> None:
+    async def _handle_config_plugin_message(self, buffer: PacketBuffer) -> None:
+        channel = buffer.read_string()
+        logger.debug(f"Configuration plugin message on channel: {channel}")
+
+    async def _handle_config_disconnect(self, buffer: PacketBuffer) -> None:
+        reason = buffer.read_string()
+        logger.error(f"Disconnected during configuration: {reason}")
+        self._running = False
+
+    async def _handle_config_finish(self, buffer: PacketBuffer) -> None:
+        logger.info("Configuration finished, transitioning to play state")
+        if self._protocol:
+            await self._protocol.send_configuration_finish_ack()
+        self._in_configuration = False
+
+    async def _handle_config_keep_alive(self, buffer: PacketBuffer) -> None:
         keep_alive_id = buffer.read_long()
         if self._protocol:
+            await self._protocol.send_configuration_keep_alive(keep_alive_id)
+
+    async def _handle_config_registry_data(self, buffer: PacketBuffer) -> None:
+        registry_id = buffer.read_string()
+        logger.debug(f"Received registry data: {registry_id}")
+
+    async def _handle_config_resource_pack_push(self, buffer: PacketBuffer) -> None:
+        pack_uuid = buffer.read_uuid()
+        url = buffer.read_string()
+        hash_str = buffer.read_string()
+        forced = buffer.read_bool()
+        logger.info(f"Resource pack pushed: {pack_uuid} (forced: {forced})")
+        if self._protocol:
+            result = 3
+            await self._protocol.send_configuration_resource_pack_response(pack_uuid, result)
+
+    async def _handle_config_feature_flags(self, buffer: PacketBuffer) -> None:
+        count = buffer.read_varint()
+        flags = [buffer.read_string() for _ in range(count)]
+        logger.debug(f"Feature flags: {flags}")
+
+    async def _handle_config_known_packs(self, buffer: PacketBuffer) -> None:
+        count = buffer.read_varint()
+        packs = []
+        for _ in range(count):
+            namespace = buffer.read_string()
+            pack_id = buffer.read_string()
+            version = buffer.read_string()
+            packs.append((namespace, pack_id, version))
+        logger.debug(f"Known packs request: {packs}")
+        if self._protocol:
+            await self._protocol.send_known_packs_response(packs)
+
+    async def _handle_keep_alive(self, buffer: PacketBuffer) -> None:
+        keep_alive_id = buffer.read_long()
+        self._last_keep_alive = keep_alive_id
+        self._last_keep_alive_time = time.time()
+        if self._protocol:
             await self._protocol.send_keep_alive(keep_alive_id)
+            logger.debug(f"Keep-alive response sent: {keep_alive_id}")
 
     async def _handle_synchronize_player_position(self, buffer: PacketBuffer) -> None:
         teleport_id = buffer.read_varint()
@@ -238,8 +321,10 @@ class MinecraftBot:
         if self._protocol:
             await self._protocol.send_teleport_confirm(teleport_id)
 
-        logger.info(f"Position synchronized: {self._player.position}")
-        await self._emit("spawn", self._player.position)
+        if not self._spawn_confirmed:
+            self._spawn_confirmed = True
+            logger.info(f"Position synchronized: ({self._player.position.x:.2f}, {self._player.position.y:.2f}, {self._player.position.z:.2f})")
+            await self._emit("spawn", self._player.position)
 
         if not self._position_update_task:
             self._position_update_task = asyncio.create_task(self._position_update_loop())
@@ -256,19 +341,19 @@ class MinecraftBot:
             await self._emit("death")
 
     async def _handle_disconnect(self, buffer: PacketBuffer) -> None:
-        reason = buffer.read_string()
-        logger.info(f"Disconnected: {reason}")
+        logger.info("Disconnected by server")
         self._running = False
 
     async def _handle_login_play(self, buffer: PacketBuffer) -> None:
+        if self._joined_game:
+            return
+        self._joined_game = True
+
         self._player.entity_id = buffer.read_int()
         self._player.is_hardcore = buffer.read_bool()
 
         logger.info(f"Joined game with entity ID {self._player.entity_id}")
         self._in_configuration = False
-
-        if self._protocol:
-            await self._protocol.send_client_information()
 
         await self._emit("join", self._player)
 
@@ -288,12 +373,117 @@ class MinecraftBot:
     async def _handle_set_time(self, buffer: PacketBuffer) -> None:
         world_age = buffer.read_long()
         time_of_day = buffer.read_long()
-        self._world.time_of_day = int(time_of_day % 24000)
+        self._world.time_of_day = int(abs(time_of_day) % 24000)
 
     async def _handle_chunk_data(self, buffer: PacketBuffer) -> None:
         chunk_x = buffer.read_int()
         chunk_z = buffer.read_int()
-        self._world.loaded_chunks.add((chunk_x, chunk_z))
+
+        chunk = ChunkData(x=chunk_x, z=chunk_z)
+
+        try:
+            heightmap_nbt = self._read_chunk_heightmap(buffer)
+            chunk.heightmap = heightmap_nbt
+        except Exception:
+            pass
+
+        try:
+            data_size = buffer.read_varint()
+            chunk_data = buffer.read_bytes(data_size)
+            self._parse_chunk_sections(chunk, chunk_data)
+        except Exception:
+            pass
+
+        self._world.loaded_chunks[(chunk_x, chunk_z)] = chunk
+
+    def _read_chunk_heightmap(self, buffer: PacketBuffer) -> dict:
+        tag_type = buffer.read_byte()
+        if tag_type == 0:
+            return {}
+        return {"type": tag_type}
+
+    def _parse_chunk_sections(self, chunk: ChunkData, data: bytes) -> None:
+        if len(data) < 10:
+            return
+
+        offset = 0
+        num_sections = (self._world.world_height) // 16
+        section_y = self._world.min_y // 16
+
+        for section_idx in range(num_sections):
+            if offset >= len(data) - 2:
+                break
+
+            try:
+                block_count = int.from_bytes(data[offset:offset+2], 'big', signed=True)
+                offset += 2
+
+                if offset >= len(data):
+                    break
+                bits_per_entry = data[offset]
+                offset += 1
+
+                section = ChunkSection(block_count=block_count, bits_per_entry=bits_per_entry)
+
+                if bits_per_entry == 0:
+                    if offset >= len(data):
+                        break
+                    palette_value, varint_size = VarInt.read(data, offset)
+                    offset += varint_size
+                    section.palette = [palette_value]
+                    data_length, varint_size = VarInt.read(data, offset)
+                    offset += varint_size
+                    offset += data_length * 8
+                elif bits_per_entry <= 8:
+                    palette_length, varint_size = VarInt.read(data, offset)
+                    offset += varint_size
+                    for _ in range(palette_length):
+                        if offset >= len(data):
+                            break
+                        entry, varint_size = VarInt.read(data, offset)
+                        offset += varint_size
+                        section.palette.append(entry)
+                    data_length, varint_size = VarInt.read(data, offset)
+                    offset += varint_size
+                    offset += data_length * 8
+                else:
+                    data_length, varint_size = VarInt.read(data, offset)
+                    offset += varint_size
+                    offset += data_length * 8
+
+                if offset >= len(data):
+                    break
+                biome_bits = data[offset]
+                offset += 1
+
+                if biome_bits == 0:
+                    if offset >= len(data):
+                        break
+                    biome_value, varint_size = VarInt.read(data, offset)
+                    offset += varint_size
+                    biome_data_length, varint_size = VarInt.read(data, offset)
+                    offset += varint_size
+                    offset += biome_data_length * 8
+                elif biome_bits <= 3:
+                    palette_length, varint_size = VarInt.read(data, offset)
+                    offset += varint_size
+                    for _ in range(palette_length):
+                        if offset >= len(data):
+                            break
+                        entry, varint_size = VarInt.read(data, offset)
+                        offset += varint_size
+                    data_length, varint_size = VarInt.read(data, offset)
+                    offset += varint_size
+                    offset += data_length * 8
+                else:
+                    data_length, varint_size = VarInt.read(data, offset)
+                    offset += varint_size
+                    offset += data_length * 8
+
+                chunk.sections[section_y + section_idx] = section
+
+            except Exception:
+                break
 
     async def _handle_block_update(self, buffer: PacketBuffer) -> None:
         position = buffer.read_position()
@@ -353,6 +543,39 @@ class MinecraftBot:
 
     async def _handle_entity_rotation(self, buffer: PacketBuffer) -> None:
         pass
+
+    async def _handle_unload_chunk(self, buffer: PacketBuffer) -> None:
+        chunk_z = buffer.read_int()
+        chunk_x = buffer.read_int()
+        self._world.loaded_chunks.pop((chunk_x, chunk_z), None)
+
+    async def _handle_chunk_batch_start(self, buffer: PacketBuffer) -> None:
+        self._chunk_batch_size = 0
+
+    async def _handle_chunk_batch_finished(self, buffer: PacketBuffer) -> None:
+        batch_size = buffer.read_varint()
+        logger.debug(f"Chunk batch finished, size: {batch_size}")
+
+    async def _handle_start_configuration(self, buffer: PacketBuffer) -> None:
+        logger.info("Server requested configuration state")
+        if self._protocol:
+            await self._protocol.send_packet(0x0C)
+            self._protocol.state = ConnectionState.CONFIGURATION
+            self._in_configuration = True
+            self._joined_game = False
+            self._spawn_confirmed = False
+            await self._protocol.send_configuration_client_information()
+
+    async def _handle_ping(self, buffer: PacketBuffer) -> None:
+        ping_id = buffer.read_int()
+        if self._protocol:
+            data = PacketBuffer.write_int(ping_id)
+            await self._protocol.send_packet(0x28, data)
+
+    async def _handle_set_center_chunk(self, buffer: PacketBuffer) -> None:
+        chunk_x = buffer.read_varint()
+        chunk_z = buffer.read_varint()
+        logger.debug(f"Center chunk set to ({chunk_x}, {chunk_z})")
 
     async def _position_update_loop(self) -> None:
         movement_speed = 4.317
@@ -492,6 +715,26 @@ class MinecraftBot:
     def get_world_state(self) -> WorldState:
         return self._world
 
+    def get_chunk_at(self, x: int, z: int) -> ChunkData | None:
+        chunk_x = x >> 4
+        chunk_z = z >> 4
+        return self._world.loaded_chunks.get((chunk_x, chunk_z))
+
+    def get_visible_chunks(self, radius: int = 4) -> list[dict]:
+        player_chunk_x = int(self._player.position.x) >> 4
+        player_chunk_z = int(self._player.position.z) >> 4
+
+        visible = []
+        for (cx, cz), chunk in self._world.loaded_chunks.items():
+            if abs(cx - player_chunk_x) <= radius and abs(cz - player_chunk_z) <= radius:
+                visible.append({
+                    "x": cx,
+                    "z": cz,
+                    "sections": len(chunk.sections),
+                    "heightmap": chunk.heightmap,
+                })
+        return visible
+
     def get_state_dict(self) -> dict:
         return {
             "player": {
@@ -517,8 +760,19 @@ class MinecraftBot:
                 "weather": self._world.weather,
                 "loaded_chunks_count": len(self._world.loaded_chunks),
                 "entities_count": len(self._world.entities),
+                "visible_chunks": self.get_visible_chunks(3),
             },
-            "connected": self._running,
+            "entities": [
+                {
+                    "id": e["entity_id"],
+                    "type": e["type"],
+                    "x": e["x"],
+                    "y": e["y"],
+                    "z": e["z"],
+                }
+                for e in list(self._world.entities.values())[:50]
+            ],
+            "connected": self._running and self._joined_game,
             "movement_keys": list(self._movement_keys),
             "is_sneaking": self._is_sneaking,
             "is_sprinting": self._is_sprinting,
@@ -570,4 +824,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

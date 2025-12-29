@@ -148,15 +148,35 @@ class BotStreamManager:
             self._clients.discard(client)
 
     async def handle_input(self, websocket: WebSocket, data: dict) -> None:
+        action = data.get("action", "")
+        success = False
+
+        if action == "connect":
+            host = data.get("host", "localhost")
+            port = data.get("port", 25565)
+            username = data.get("username", "StreamBot")
+            try:
+                await self.start_bot(host, port, username)
+                await websocket.send_text(json.dumps({
+                    "type": "ack",
+                    "action": action,
+                    "success": True,
+                }))
+            except Exception as e:
+                logger.error(f"Connection error: {e}")
+                await websocket.send_text(json.dumps({
+                    "type": "error",
+                    "action": action,
+                    "error": str(e),
+                }))
+            return
+
         if not self._bot:
             await websocket.send_text(json.dumps({
                 "type": "error",
                 "error": "Bot not connected",
             }))
             return
-
-        action = data.get("action", "")
-        success = False
 
         try:
             if action == "move_forward":
@@ -211,12 +231,6 @@ class BotStreamManager:
                 state = self._bot.get_state_dict()
                 await websocket.send_text(json.dumps({"type": "state", "data": state}))
                 return
-            elif action == "connect":
-                host = data.get("host", "localhost")
-                port = data.get("port", 25565)
-                username = data.get("username", "StreamBot")
-                await self.start_bot(host, port, username)
-                success = True
             elif action == "disconnect":
                 await self.stop_bot()
                 success = True
