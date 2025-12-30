@@ -3,7 +3,7 @@ import { mineflayer as mineflayerViewer } from 'prismarine-viewer'
 
 const bot = mineflayer.createBot({
   host: 'localhost',
-  username: 'Bot',
+  username: 'Curiosity',
   auth: 'offline'
 })
 
